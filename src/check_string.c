@@ -50,7 +50,16 @@ void push(stack_21 **st, double num, prior_t pr, type_sign sign) {
     *st = st_temp;
 }
 
-stack_21 *get()
+stack_21 *get(stack_21 **st) {
+    stack_21 *temp = NULL;
+    stack_21 *ret = calloc(1, sizeof(stack_21));
+    temp = *st;
+    ret->val = temp->val;
+    ret->prior = temp->prior;
+    ret->t_val = temp->t_val;
+    *st = (*st)->next;
+    return ret;
+}
 
 
 int main() {
