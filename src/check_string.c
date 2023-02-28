@@ -52,7 +52,7 @@ void push_sym(stack_symbol **st, prior_t pr, type_sign sign);
 stack_symbol *get_sym(stack_symbol **st);
 //stack_num *get_num(stack_num **st);
 int digits(char c);
-char* cut_char(char *str, int *i);
+void cut_char(char *str, int i, char *temp);
 int is_func(int *i, char *str);
 stack_symbol *watch_peak(stack_symbol *st);
 int is_oper(char *str, int *i);
@@ -61,6 +61,8 @@ int is_empty(stack_symbol *st);
 int get_prior(int sign);
 int is_unary(char *str, int *i);
 int comp_prior(int i, stack_symbol *st);
+void symbol_to_char(int i, char **out);
+void move_to_string(char **out, stack_symbol **st, int operator);
 
 
 void push_sym(stack_symbol **st, prior_t pr, type_sign sign) {
@@ -104,6 +106,7 @@ int to_stack(char *str, stack_symbol **st, char **outs) {
     int check_func = 0;
     int check_oper = 0;
     for(int i = 0; str[i] != '\0'; i++) {
+        printf("%d\n", i);
         if(is_unary(str, &i) == 1) {
             if(digits(str[i + 1]) == 1) {
                 *outs[c_out] = str[i];
@@ -111,29 +114,87 @@ int to_stack(char *str, stack_symbol **st, char **outs) {
             } else
                 ret = -1;
         }
-        if(digits(str[i]) == 1) {
-            strcpy(*outs + strlen(*outs), cut_char(str, &i));
-            *outs[strlen(*outs)] = '\t';
-        } else if((check_func = is_func(&i, str)) != 0)
+        else if(digits(str[i]) == 1) {
+            cut_char(str, i, *outs);
+        }
+        else if((check_func = is_func(&i, str)) != 0)
             push_sym(st, get_prior(check_func) ,check_func);
         else if((check_oper = is_oper(str, &i))) {
-            if(comp_prior(get_prior(check_oper), *st) == 1)
-
+            //printf("%s", *outs);
+            move_to_string(outs, st, check_oper);
             push_sym(st, get_prior(check_oper), check_oper);
-            i += 1;
+            i++;
         }
         
     }
     return ret;
 }
 
-void move_to_string(char **out, stack_symbol *st) {
 
+
+int main() {
+    stack_symbol *st = NULL;
+    char *t = malloc(sizeof(char) * 20);
+    to_stack("1+3-4", &st, &t);
+    printf("out = %s\n", t);
+    free(t);
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+void move_to_string(char **out, stack_symbol **st, int operator) {
+    while(comp_prior(operator, *st) == 1) {
+        symbol_to_char(get_sym(st)->t_val, out);
+    }
+}
+
+void symbol_to_char(int i, char **out) {
+    if(i == sum)
+        strcpy(*out + strlen(*out), "+ ");
+    else if(i == del)
+        strcpy(*out + strlen(*out), "- ");
+    else if(i == mul)
+        strcpy(*out + strlen(*out), "* ");
+    else if(i == divi)
+        strcpy(*out + strlen(*out), "/ ");
+    else if(i == mod)
+        strcpy(*out + strlen(*out), "%% ");
+    else if(i == pow)
+        strcpy(*out + strlen(*out), "^ ");
+    else if(i == coss)
+        strcpy(*out + strlen(*out), "cos ");
+    else if(i == sinn)
+        strcpy(*out + strlen(*out), "sin ");
+    else if(i == tann)
+        strcpy(*out + strlen(*out), "tan ");
+    else if(i == acoss)
+        strcpy(*out + strlen(*out), "acos ");
+    else if(i == asinn)
+        strcpy(*out + strlen(*out), "asin ");
+    else if(i == atann)
+        strcpy(*out + strlen(*out), "atan ");
+    else if(i == lnn)
+        strcpy(*out + strlen(*out), "ln ");
+    else if(i == logg)
+        strcpy(*out + strlen(*out), "logg ");
+    else if(i == sqrtt)
+        strcpy(*out + strlen(*out), "sqrt ");
 }
 
 int comp_prior(int i, stack_symbol *st) {
     int ret = 0;
-    if(i >= watch_peak(st)->prior || is_empty(st))
+    if(is_empty(st) == 1 && get_prior(i) >= watch_peak(st)->prior)
         ret = 1;
     return ret;
 }
@@ -200,26 +261,4 @@ int is_func(int *i, char *str) {
         *i += 2;
     return ret;
 }
-
-char* cut_char(char *str, int *i) {
-    char *ret = NULL;
-    int j = 0;
-    char temp[32] = {'\0'};
-    while((digits(str[*i]) == 1) || (str[*i] == '.' && digits(str[*i - 1]) == 1 && digits(str[*i + 1]) == 1)) {
-        temp[j] = str[*i];
-        j++;
-        *i += 1;
-    }
-    ret = temp;
-    return ret;
-}
-
-int digits(char c) {
-    int ret = 0;
-    if(c > '0' && c < '9')
-        ret = 1;
-    return ret;
-        
-}
-
 
