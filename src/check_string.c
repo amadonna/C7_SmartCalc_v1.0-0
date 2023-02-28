@@ -48,28 +48,24 @@ typedef struct Node
 
 
 int parser(char *str, stack_symbol **st);
-void push_sym(stack_symbol **st, type_sign sign);
+void push_sym(stack_symbol **st, prior_t pr, type_sign sign);
 stack_symbol *get_sym(stack_symbol **st);
 //stack_num *get_num(stack_num **st);
 int digits(char c);
 char* cut_char(char *str, int *i);
 int is_func(int *i, char *str);
 stack_symbol *watch_peak(stack_symbol *st);
+int is_oper(char *str, int *i);
+stack_symbol *watch_peak(stack_symbol *st);
+int is_empty(stack_symbol *st);
+int get_prior(int sign);
+int is_unary(char *str, int *i);
+int comp_prior(int i, stack_symbol *st);
 
-void push_sym(stack_symbol **st, type_sign sign) {
+
+void push_sym(stack_symbol **st, prior_t pr, type_sign sign) {
     stack_symbol *st_temp = calloc(1, sizeof(stack_symbol));
-    if(sign == unar)
-        st_temp->prior = unary; 
-    else if(sign == openB)
-        st_temp->prior = open_b;
-    else if(sign == closeB)
-        st_temp->prior = close_b;
-    else if(sign == sum || sign == del)
-        st_temp->prior = plus_minus;
-    else if(sign == divi || sign == mul || sign == mod)
-        st_temp->prior = div_mul_mod;
-    else if(sign >= 6 && sign <= 15)
-        st_temp->prior = expon_funs;
+    st_temp->prior = pr;
     st_temp->t_val = sign;
     st_temp->next = *st;
     *st = st_temp;
@@ -98,7 +94,7 @@ stack_symbol *get_sym(stack_symbol **st) {
 stack_symbol *watch_peak(stack_symbol *st) {
     stack_symbol *temp = NULL;
     temp = get_sym(&st);
-    push_sym(&temp, temp->t_val);
+    push_sym(&temp, temp->prior, temp->t_val);
     return temp;
 }
 
@@ -106,27 +102,74 @@ int to_stack(char *str, stack_symbol **st, char **outs) {
     int ret = 0;
     int c_out = 0;
     int check_func = 0;
+    int check_oper = 0;
     for(int i = 0; str[i] != '\0'; i++) {
-        if(isspace(str[i]))
-            i++;
+        if(is_unary(str, &i) == 1) {
+            if(digits(str[i + 1]) == 1) {
+                *outs[c_out] = str[i];
+                i++;
+            } else
+                ret = -1;
+        }
         if(digits(str[i]) == 1) {
             strcpy(*outs + strlen(*outs), cut_char(str, &i));
             *outs[strlen(*outs)] = '\t';
         } else if((check_func = is_func(&i, str)) != 0)
-            push_sym(st, check_func);
-        else if()
+            push_sym(st, get_prior(check_func) ,check_func);
+        else if((check_oper = is_oper(str, &i))) {
+            if(comp_prior(get_prior(check_oper), *st) == 1)
+
+            push_sym(st, get_prior(check_oper), check_oper);
+            i += 1;
+        }
         
     }
     return ret;
 }
 
-
-int is_oper(char *str, int *i) {
-    char c = 0;
-    c = str[*i];
-    if()
+void move_to_string(char **out, stack_symbol *st) {
+    
 }
 
+int comp_prior(int i, stack_symbol *st) {
+    int ret = 0;
+    if(i >= watch_peak(st)->prior || is_empty(st))
+        ret = 1;
+    return ret;
+}
+
+int get_prior(int sign) {
+    int ret = 0;
+    if(sign == unar)
+        ret = unary; 
+    else if(sign == openB)
+        ret = open_b;
+    else if(sign == closeB)
+        ret = close_b;
+    else if(sign == sum || sign == del)
+        ret = plus_minus;
+    else if(sign == divi || sign == mul || sign == mod)
+        ret = div_mul_mod;
+    else if(sign >= 6 && sign <= 15)
+        ret = expon_funs;
+    return ret;
+}
+
+int is_unary(char *str, int *i) {
+    int ret = 0;
+    if((str[*i] == '-' || str[*i] == '+') && (str[*i - 1] != ')' && digits(str[*i]) == 0))
+        ret = 1;
+    return ret;
+}
+
+int is_oper(char *str, int *i) { return (str[*i] == '+' || str[*i] == '-' || str[*i] == '/' || str[*i] == '*' || str[*i] == '%');}
+
+int is_empty(stack_symbol *st) {
+    int ret = 0;
+    if(st != NULL)
+        ret = 1;
+    return ret;
+}
 int is_func(int *i, char *str) {
     int ret = 0;
     if(str[*i] >= 'a' && str[*i] <= 'z') {
