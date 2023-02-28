@@ -128,7 +128,7 @@ int to_stack(char *str, stack_symbol **st, char **outs) {
 }
 
 void move_to_string(char **out, stack_symbol *st) {
-    
+
 }
 
 int comp_prior(int i, stack_symbol *st) {
@@ -223,13 +223,3 @@ int digits(char c) {
 }
 
 
-*/
-/*stack_num *get_num(stack_num **st) {
-    stack_num *temp = NULL;
-    stack_num *ret = calloc(1, sizeof(stack_symbol));
-    temp = *st;
-    ret->val = temp->val;
-    *st = (*st)->next;
-    free(temp);
-    return ret;
-}*/
