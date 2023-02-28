@@ -223,16 +223,6 @@ int digits(char c) {
 }
 
 
-
-/*
-int checker(char *str) {
-    int ret = 0;
-    int stop = 0;
-    for(int i = 0; str[i] + '\0' && stop == 0; i++) {
-
-    }
-    return ret;
-}
 */
 /*stack_num *get_num(stack_num **st) {
     stack_num *temp = NULL;
