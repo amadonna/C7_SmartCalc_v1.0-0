@@ -52,17 +52,23 @@ int is_func(int *i, char *str);
 int get_prior(int sign);
 int is_oper(char *str, int i);
 void check_unar(char *str, int i, int *check_unar);
-void move__(stack_symbol **st, int symbol);
+void move__(stack_symbol **st, int symbol, char **out);
+int is_empty(stack_symbol *st);
+stack_symbol *watch_peak(stack_symbol **st);
+int comp_prior(int i, stack_symbol **st);
+void rewrite_to_out(char **out, int sym);
 
 
 
 int main() {
     stack_symbol *st = NULL;
-    char *t = malloc(sizeof(char) * 20);
-    to_stack("1.31+3e+12-4+sin", &st, &t);
+    char *t = malloc(sizeof(char) * 40);
+    to_stack("2*2+3", &st, &t);
     printf("out = %s\n", t);
-    st = get_sym(&st);
-    printf("prior = %d\ttype = %d\n", st->prior, st->t_val);
+    if(st != NULL) {
+        st = get_sym(&st);
+        printf("prior = %d\ttype = %d\n", st->prior, st->t_val);
+    }
     free(t);
     return 0;
 }
@@ -76,18 +82,52 @@ int to_stack(char *str, stack_symbol **st, char **outs) {
     while(str[i] != '\0') {
         if((check_func = is_func(&i, str)) != 0)
             push_sym(st, get_prior(check_func), check_func);
-        else if(str[i] == '(')
-            push_sym(st, get_prior('('), '(');
         else if(digits(str[i]))
             cut_num(str,*outs + strlen(*outs), &i);
         else if ((check_oper = is_oper(str, i)) != 0) {
             check_unar(str, i, &check_oper);
-
+            while (!is_empty(*st) && comp_prior(check_oper, st)) {
+                char a = (char)get_sym(st)->t_val;
+                strcpy(*outs + strlen(*outs), &a);
+                strcpy(*outs + strlen(*outs), " ");
+            }
+            push_sym(st, get_prior(check_oper), check_oper);
+            i++;
+        } else if(str[i] == '(') {
+            push_sym(st, get_prior('('), '(');
+            i++;
+        }
+        else if(str[i] == ')') {
+            int stop = 0;
+            while (!is_empty(*st) && stop == 0) {
+                char a;
+                if((a = get_sym(st)->t_val == '('))
+                    stop = -1;
+                printf("%s\n", *outs);
+                strcpy(*outs + strlen(*outs), &a);
+                strcpy(*outs + strlen(*outs), " ");                
+            }
         }
         else
             i++;
     }
+    while (!is_empty(*st)) {
+        char a = get_sym(st)->t_val;
+        if(a != '(') {
+            strcpy(*outs + strlen(*outs), &a);
+            strcpy(*outs + strlen(*outs), " ");
+        }
+    }
     return ret;
+}
+
+stack_symbol *watch_peak(stack_symbol **st) {
+    stack_symbol *temp = NULL;
+    if(is_empty(*st)) {
+        temp = get_sym(st);
+        push_sym(&temp, temp->prior, temp->t_val);
+    }
+    return temp;
 }
 
 void push_sym(stack_symbol **st, prior_t pr, type_sign sign) {
@@ -177,7 +217,7 @@ int get_prior(int sign) {
         ret = plus_minus;
     else if(sign == divi || sign == mul || sign == mod)
         ret = div_mul_mod;
-    else if(sign >= 6 && sign <= 15)
+    else if(sign >= 95 && sign <= 103)
         ret = expon_funs;
     return ret;
 }
@@ -198,6 +238,15 @@ void check_unar(char *str, int i, int *check_unar) {
     }
 }
 
-void move__(stack_symbol **st, int symbol) {
-    
+
+int is_empty(stack_symbol *st) {return(st == NULL);}
+
+
+int comp_prior(int i, stack_symbol **st) {
+    int ret = 0;
+    if(is_empty(*st)) {
+        if(get_prior(i) < (int)watch_peak(st)->prior)
+            ret = 1;
+    }
+    return ret;
 }
