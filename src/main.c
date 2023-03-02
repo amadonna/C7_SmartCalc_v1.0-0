@@ -82,6 +82,7 @@ int to_stack(char *str, stack_symbol **st, char **outs) {
     while(str[i] != '\0') {
         if((check_func = is_func(&i, str)) != 0)
             push_sym(st, get_prior(check_func), check_func);
+
         else if(digits(str[i]))
             cut_num(str,*outs + strlen(*outs), &i);
         else if ((check_oper = is_oper(str, i)) != 0) {

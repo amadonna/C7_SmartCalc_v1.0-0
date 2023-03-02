@@ -31,19 +31,20 @@ typedef struct st {
 } stack;
 
 int polish(char *str, char **out);
-stack *push(stack **st, int symbol);
+void push(stack **st, int symbol);
 int del_peak(stack **st);
 int cut_num(char *str, char *out, int *i);
 int digits(char c);
 int is_func(int *i, char *str);
 void move_to_out(stack **st, char **out);
 int is_empty(stack *st);
+int is_oper(char c);
 
 
 int main() {
     char *str = NULL;
-    str = realloc(str, sizeof(char));
-    polish("cos+1+1+1*2+sin", &str);
+    str = calloc(40, sizeof(char));
+    polish("sin+1+1+1*2+cos", &str);
     printf("%s\n", str);
     free(str);
     return 0;
@@ -59,55 +60,49 @@ int polish(char *str, char **out) {
     while(str[i] != '\0' && ret == 0) {
         if(digits(str[i]))
             cut_num(str,*out + strlen(*out), &i);
-        else if((check_func = is_func(&i, str)) != 0) {
+        else if((check_func = is_func(&i, str)) != 0) 
             push(&st, check_func);
-        }
         else if(str[i] == '(') {
             push(&st, str[i]);
             i++;
-        }
-        else {
+        } else if(is_oper(str[i]) != 0) {
             push(&st, str[i]);
+            i++;
+        } else if
+        else {
             i++;
         }
     }
     
     while(st != NULL){
         move_to_out(&st, out);
-        // temp = calloc(3 ,sizeof(char));
-        // if(temp != NULL) {
-        //     temp[0] = del_peak(&st);
-        //     temp[1] = ' ';
-        //     strcpy(*out + strlen(*out), temp);
-        // }
     }
-    
     return ret;
 }
 
 void move_to_out(stack **st, char **out) {
-    char *temp = calloc(3 ,sizeof(char));
+    char *temp = calloc(2 ,sizeof(char));
     if(temp != NULL) {
-        
         temp[0] = del_peak(st);
         temp[1] = ' ';
-        printf("%c\n", temp[0]);
         strcpy(*out + strlen(*out), temp);
     }
     free(temp);
 }
 
+
+
 int is_empty(stack *st) {return(st == NULL);}
 
 
-stack *push(stack **st, int symbol) {
+void push(stack **st, int symbol) {
     stack *temp = NULL;
     if((temp = calloc(1, sizeof(stack))) != NULL) {
+        printf("sy = %c\n", symbol);
         temp->symbol = symbol;
         temp->next = *st;
         *st = temp;
     }
-    return temp;
 }
 
 int del_peak(stack **st) {
@@ -116,9 +111,16 @@ int del_peak(stack **st) {
     if(*st != NULL) {
         temp = *st;
         ret = temp->symbol;
-        *st = temp->next;
+        *st = (*st)->next;
         free(temp);
     }
+    return ret;
+}
+
+int is_oper(char c) {
+    int ret = 0;
+    if (c == '+' || c == '-' || c == '/' || c == '*' || c == '%' || c == '^')
+        ret = c;
     return ret;
 }
 
@@ -168,7 +170,6 @@ int is_func(int *i, char *str) {
             ret = lnn;
         else if(strncmp("log", str + *i, 3) == 0)
             ret = logg;
-        printf("%c\n", ret);
     }
     if(ret == tann || ret == sinn || ret == coss || ret == logg)
         *i += 3;
