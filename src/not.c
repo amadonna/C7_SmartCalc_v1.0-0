@@ -55,7 +55,7 @@ int get_prior(int sign);
 int main() {
     char *str = NULL;
     str = calloc(40, sizeof(char));
-    polish("(1+2)*(3+4)-1", &str);
+    polish("2*(2+-2^2^3)-1", &str);
     printf("%s\n", str);
     free(str);
     return 0;
@@ -80,26 +80,21 @@ int polish(char *str, char **out) {
             i++;
         } else if ((check_unar = is_unary(str, &i)) != 0) push(&st, check_unar);
         else if(is_oper(str[i]) != 0) {
-            if(is_empty(st)) push(&st, str[i]);
-            else { while(get_prior(st->symbol) > get_prior(str[i])) {
-                move_to_out(&st, out);} }
+            while(st != NULL && get_prior(st->symbol) > get_prior(str[i]))
+                move_to_out(&st, out);
             push(&st, str[i]);
-            
             i++;
         } else if(str[i] == ')') {
-            while(!is_empty(st)) {
-                if(st->symbol != '(')
-                    move_to_out(&st, out);
-                else
-                    del_peak(&st);
-            }
+            while(st != NULL && st->symbol != '(')
+                move_to_out(&st, out);
+            if(st != NULL)
+                del_peak(&st);
             i++;
         }
-        else {
+        else
             i++;
-        }
+        
     }
-    printf("\n%s\n", *out);
     while(st != NULL)
         move_to_out(&st, out);
     return ret;
@@ -130,7 +125,7 @@ int get_prior(int sign) {
         ret = plus_minus;
     else if(sign == divi || sign == mul || sign == mod)
         ret = div_mul_mod;
-    else if(sign >= 95 && sign <= 103)
+    else if(sign >= 94 && sign <= 103)
         ret = expon_funs;
     return ret;
 }
