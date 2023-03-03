@@ -25,6 +25,15 @@ typedef enum {
     unar_neg = 126
 } type_sign;
 
+typedef enum {
+    open_b,
+    close_b,
+    plus_minus,
+    div_mul_mod,
+    expon_funs,
+    unary
+} prior_t;
+
 typedef struct st {
     int symbol;
     struct st *next;
@@ -39,49 +48,96 @@ int is_func(int *i, char *str);
 void move_to_out(stack **st, char **out);
 int is_empty(stack *st);
 int is_oper(char c);
+int is_unary(char *str, int *i);
+int get_prior(int sign);
 
 
 int main() {
     char *str = NULL;
     str = calloc(40, sizeof(char));
-    polish("sin+1+1+1*2+cos", &str);
+    polish("(1+2)*(3+4)-1", &str);
     printf("%s\n", str);
     free(str);
     return 0;
 }
 
 
+
+
 int polish(char *str, char **out) {
     int ret = 0;
     int i = 0;
     int check_func = 0;
+    int check_unar = 0;
+    //int stop_brace = 0;
     stack *st = NULL;
     //char *temp = NULL;
     while(str[i] != '\0' && ret == 0) {
-        if(digits(str[i]))
-            cut_num(str,*out + strlen(*out), &i);
-        else if((check_func = is_func(&i, str)) != 0) 
-            push(&st, check_func);
+        if(digits(str[i])) cut_num(str,*out + strlen(*out), &i);
+        else if((check_func = is_func(&i, str)) != 0)  push(&st, check_func);
         else if(str[i] == '(') {
             push(&st, str[i]);
             i++;
-        } else if(is_oper(str[i]) != 0) {
+        } else if ((check_unar = is_unary(str, &i)) != 0) push(&st, check_unar);
+        else if(is_oper(str[i]) != 0) {
+            if(is_empty(st)) push(&st, str[i]);
+            else { while(get_prior(st->symbol) > get_prior(str[i])) {
+                move_to_out(&st, out);} }
             push(&st, str[i]);
+            
             i++;
-        } else if
+        } else if(str[i] == ')') {
+            while(!is_empty(st)) {
+                if(st->symbol != '(')
+                    move_to_out(&st, out);
+                else
+                    del_peak(&st);
+            }
+            i++;
+        }
         else {
             i++;
         }
     }
-    
-    while(st != NULL){
+    printf("\n%s\n", *out);
+    while(st != NULL)
         move_to_out(&st, out);
-    }
     return ret;
 }
 
+int is_unary(char *str, int *i) {
+    int ret = 0;
+    if(str[*i - 1] != ')' && digits(str[*i + 1]) && !digits(str[*i - 1])) {
+        if(str[*i] == '-')
+            ret = '~';
+        else if(str[*i] == '+')
+            ret = '|';
+    }
+    if(ret != 0)
+        *i +=1;
+    return ret;
+}
+
+int get_prior(int sign) {
+    int ret = 0;
+    if(sign == unar_pos || sign == unar_neg)
+        ret = unary; 
+    else if(sign == openB)
+        ret = open_b;
+    else if(sign == closeB)
+        ret = close_b;
+    else if(sign == sum || sign == del)
+        ret = plus_minus;
+    else if(sign == divi || sign == mul || sign == mod)
+        ret = div_mul_mod;
+    else if(sign >= 95 && sign <= 103)
+        ret = expon_funs;
+    return ret;
+}
+
+
 void move_to_out(stack **st, char **out) {
-    char *temp = calloc(2 ,sizeof(char));
+    char *temp = calloc(3 ,sizeof(char));
     if(temp != NULL) {
         temp[0] = del_peak(st);
         temp[1] = ' ';
@@ -98,7 +154,6 @@ int is_empty(stack *st) {return(st == NULL);}
 void push(stack **st, int symbol) {
     stack *temp = NULL;
     if((temp = calloc(1, sizeof(stack))) != NULL) {
-        printf("sy = %c\n", symbol);
         temp->symbol = symbol;
         temp->next = *st;
         *st = temp;
